@@ -5,7 +5,6 @@ from cvxopt import matrix
 from cvxopt import solvers
 
 
-
 class qp_solver:
     def __init__(self, df:pd.DataFrame, col_index:str='index'):
         self.df = df.copy()
@@ -79,8 +78,6 @@ class qp_solver:
                          A=A,b=b) # linear restrictions
         return sol
         
-        
-
 
 if __name__ == '__main__':
     T = 1000
@@ -91,8 +88,8 @@ if __name__ == '__main__':
 
     df = pd.DataFrame({
         's1': s1,
-        's2': s2,
         's3': s3,
+        's2': s2,
         'index': index
     })
        
