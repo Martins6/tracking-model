@@ -1,15 +1,15 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from cvxopt import matrix
 from cvxopt import solvers
 
 
 class qp_solver:
-    def __init__(self, df:pd.DataFrame, col_index:str='index'):
+    def __init__(self, df:pd.DataFrame, limits:np.ndarray=None, col_index:str='index'):
         self.df = df.copy()
         self.col_index = col_index
         self.weights = df.loc[:, ~df.columns.str.match(self.col_index)].columns.to_numpy()
+        self.limits = limits
     
     def _H_matrix(self):
         df = self.df.copy()
@@ -56,6 +56,7 @@ class qp_solver:
         Z = -np.identity(N)
         p = np.repeat([0], N).transpose()
         p = np.reshape(p, (N,1))
+        
         return Z,p
     
     def solve(self):
@@ -76,6 +77,15 @@ class qp_solver:
         sol = solvers.qp(P=H,q=g, # objective
                          G=Z,h=p, # linear inequalities
                          A=A,b=b) # linear restrictions
+        
+        # Adding objective cost value
+        stock_data = df.loc[:, ~df.columns.str.match(self.col_index)].to_numpy()
+        weights = np.array(sol['x'], dtype=float)
+        model_results = np.matmul(stock_data, weights).flatten()
+        cost_value = np.mean((df[self.col_index].to_numpy() - model_results)**2)
+        
+        sol['cost value'] = cost_value
+        
         return sol
         
 
@@ -85,6 +95,7 @@ if __name__ == '__main__':
     s2=np.random.normal(size=T)
     s3=np.random.normal(size=T)
     index = s1*0.6 + s2*0.1 + s3*0.3
+    print(type(s1))
 
     df = pd.DataFrame({
         's1': s1,
@@ -95,5 +106,13 @@ if __name__ == '__main__':
        
     qp = qp_solver(df)
     sol = qp.solve()
+    print(sol)
     print(sol['x'])
     print(qp.weights)
+    print(sol['cost value'])
+    # Checking solution
+    stock_data = df.loc[:, ~df.columns.str.match('index')].to_numpy()
+    weights = np.array(sol['x'], dtype=float)
+    model_results = np.matmul(stock_data, weights).flatten()
+    
+    print(np.mean((df['index'].to_numpy() - model_results)**2))
