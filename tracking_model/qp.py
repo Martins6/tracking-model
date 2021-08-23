@@ -8,7 +8,7 @@ class qp_solver:
     def __init__(self, df:pd.DataFrame, limits:np.ndarray=None, col_index:str='index'):
         self.df = df.copy()
         self.col_index = col_index
-        self.weights = df.loc[:, ~df.columns.str.match(self.col_index)].columns.to_numpy()
+        self.weights = df.loc[:, ~df.columns.str.match(self.col_index)].columns.to_numpy().tolist()
         self.limits = limits
     
     def _H_matrix(self):
@@ -78,9 +78,11 @@ class qp_solver:
                          G=Z,h=p, # linear inequalities
                          A=A,b=b) # linear restrictions
         
+        sol['x'] = np.array(sol['x'], dtype=float)
+        
         # Adding objective cost value
         stock_data = df.loc[:, ~df.columns.str.match(self.col_index)].to_numpy()
-        weights = np.array(sol['x'], dtype=float)
+        weights = sol['x']
         model_results = np.matmul(stock_data, weights).flatten()
         cost_value = np.mean((df[self.col_index].to_numpy() - model_results)**2)
         
@@ -112,7 +114,7 @@ if __name__ == '__main__':
     print(sol['cost value'])
     # Checking solution
     stock_data = df.loc[:, ~df.columns.str.match('index')].to_numpy()
-    weights = np.array(sol['x'], dtype=float)
+    weights = sol['x']
     model_results = np.matmul(stock_data, weights).flatten()
     
     print(np.mean((df['index'].to_numpy() - model_results)**2))

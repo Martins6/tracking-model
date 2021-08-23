@@ -41,21 +41,23 @@ def track_index(
     """
     t0 = time()
     N = data.loc[:, ~data.columns.str.match(index_name)].shape[1]
-    pop = list(gen_initial_pop(N, P))
+    pop = list(gen_initial_pop(N, P, K))
     stop = False
     flag_mse_limit = False
+    obj_fun_pop = None
     while not stop:
         children = None
         if uniform(0, 1) <= cross:
             parents = choices(pop, k=2)
             children = crossover(parents, cut, K)
             if uniform(0, 1) <= mut:
-                print('before', children)
                 children = mutate(children)
-                print('after', children)
         if children:
-            pop = pop.extend(children)
-            pop, obj_fun_pop, flag_mse_limit = select_top(pop, P)
+            pop.extend(children)
+            print(pop)
+            obj_fun_pop, flag_mse_limit = select_top(pop, data,
+                                                     mse_limit, index_name)
+            pop = obj_fun_pop[0]
 
         if((time() - t0) >= max_time) or (flag_mse_limit == True):
             stop = True
@@ -65,11 +67,11 @@ def track_index(
     return names, weights, (time() - t0)
 
 
-def gen_initial_pop(N:int, P:int):
+def gen_initial_pop(N:int, P:int, K:int):
     for i in range(P):  
         initial_population = np.zeros((N,))
-        for i in range(N):
-            activated_index = randint(0, N-1)
+        sample_values = sample(list(range(N)), k=K)
+        for activated_index in sample_values:
             initial_population[activated_index] = 1
         yield initial_population
         
@@ -118,19 +120,43 @@ def mutate(children:list):
         child[on_sample] = 0
         child[off_sample] = 1
     return children
-        
+
+
+def select_top(
+    pop:list,
+    data:pd.DataFrame,
+    mse_limit:float,
+    index_name:str
+) -> tuple:
+    obj_values = [objective_fun(i, data, index_name) for i in pop]
+    obj_values.sort(key=lambda x: x['cost value'])
+    
+    print('hey oh', obj_values)
+    
+    check_mse_limit = any(list(map(lambda x: x['cost value'] <= mse_limit,
+                                   obj_values)))
+    
+    print(check_mse_limit)
+    
+    return obj_values[:-2], check_mse_limit
+
 
 def objective_fun(
     element:np.ndarray,
-    index_name:str,
-    data:pd.DataFrame
+    data:pd.DataFrame,
+    index_name:str
 ) -> tuple:
-    selected_data = data.loc[:, element]
+    data = data.copy()
+    selected_data = data.loc[:, ~data.columns.str.match(index_name)]
+    selected_data = selected_data.loc[:, element == 1]
+    selected_data[index_name] = data[index_name]
     
-    qp = qp_solver(df=element, col_index=index_name)
+    qp = qp_solver(df=selected_data, col_index=index_name)
     sol = qp.solve()
-    return sol['x'], qp.weights, sol['cost value']
     
+    return {'weights': sol['x'],
+            'names': qp.weights,
+            'cost value': sol['cost value']}
 
 
 if __name__ == '__main__':
