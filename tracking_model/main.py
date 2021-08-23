@@ -1,8 +1,8 @@
 from tracking_model.qp import qp_solver
+from random import randint, choices, uniform, sample
 import pandas as pd
 import numpy as np
-from random import randint, choices
-
+from time import time
 
 def track_index(
     data:pd.DataFrame,
@@ -14,7 +14,7 @@ def track_index(
     cut:int=4,
     weight_limits:np.ndarray=None,
     max_time:float=60,
-    mse_limit:float=5*(10**(-8))
+    mse_limit:float=5*(10**(-10))
 ) -> tuple:
     """Tracking model using Genetic Algorithm and Quadratic Optimization as shown in Amorim et al. (2020).
     See more in the references. The objective is to imitate a time-series, called 'Index', composed of a linear
@@ -39,16 +39,30 @@ def track_index(
     Returns:
         (tuple): Tuple containing the names, the weights and the total time of the operation, in that order.
     """
+    t0 = time()
     N = data.loc[:, ~data.columns.str.match(index_name)].shape[1]
-    
     pop = list(gen_initial_pop(N, P))
-    print(choices(pop, k=2))
-    stop = False    
+    stop = False
+    flag_mse_limit = False
     while not stop:
-        
-        
+        children = None
+        if uniform(0, 1) <= cross:
+            parents = choices(pop, k=2)
+            children = crossover(parents, cut, K)
+            if uniform(0, 1) <= mut:
+                print('before', children)
+                children = mutate(children)
+                print('after', children)
+        if children:
+            pop = pop.extend(children)
+            pop, obj_fun_pop, flag_mse_limit = select_top(pop, P)
+
+        if((time() - t0) >= max_time) or (flag_mse_limit == True):
+            stop = True
     
-    return names, weights, time
+    names, weights = select_best(obj_fun_pop)
+        
+    return names, weights, (time() - t0)
 
 
 def gen_initial_pop(N:int, P:int):
@@ -58,7 +72,53 @@ def gen_initial_pop(N:int, P:int):
             activated_index = randint(0, N-1)
             initial_population[activated_index] = 1
         yield initial_population
+        
 
+def crossover(parents:list, cut:float, K:int):
+    def correct(child:np.array):
+        index_array = np.array(range(len(child)))
+        
+        while child.sum() > K:
+            index_of_change = index_array[child == 1]
+            i_change = sample(index_of_change.tolist(), 1)
+            child[i_change] = 0
+        
+        while child.sum() < K:
+            index_of_change = index_array[child == 0]
+            i_change = sample(index_of_change.tolist(), 1)
+            child[i_change] = 1
+        
+        return child
+    
+    def cut_and_join(indexes:list):
+        cut_parent_1 = parents[indexes[0]].tolist()[0:cut]
+        cut_parent_2 = parents[indexes[1]].tolist()[cut:]
+        child = np.array(cut_parent_1 + cut_parent_2, dtype=int)
+        
+        if child.sum() != K:
+            child = correct(child)
+        return child
+        
+    children = []
+    children.append(cut_and_join([0,1]))
+    children.append(cut_and_join([1,0]))
+    
+    return children
+
+
+def mutate(children:list):
+    for child in children:
+        index_array = np.array(range(len(child)))
+        
+        on = index_array[child == 1]
+        on_sample = sample(on.tolist(), 1)    
+        off = index_array[child == 0]
+        off_sample = sample(off.tolist(), 1)
+        
+        child[on_sample] = 0
+        child[off_sample] = 1
+    return children
+        
 
 def objective_fun(
     element:np.ndarray,
@@ -78,19 +138,23 @@ if __name__ == '__main__':
     s1=np.random.normal(size=T)
     s2=np.random.normal(size=T)
     s3=np.random.normal(size=T)
-    index = s1*0.6 + s2*0.1 + s3*0.3
+    s4=np.random.normal(size=T)
+    s5=np.random.normal(size=T) 
+    index = s1*0.1 + s2*0.2 + s3*0.3 + s4*0.2 + s5*0.2
 
     df = pd.DataFrame({
         's1': s1,
-        's3': s3,
-        's2': s2,
+        's2': s3,
+        's3': s2,
+        's4': s4,
+        's5': s5,
         'index': index
     })
     
     df = df.apply(lambda x: (np.diff(x) / x[1:] ))
     print(df.isna().mean())
     
-    track_index(df, K=2, index_name='index')
+    track_index(df, K=3, index_name='index')
     
     
     
