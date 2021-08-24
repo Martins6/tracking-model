@@ -13,7 +13,7 @@ def track_index(
     mut:float=0.85,
     cut:int=4,
     weight_limits:np.ndarray=None,
-    max_time:float=60,
+    max_time:float=10,
     mse_limit:float=5*(10**(-10))
 ) -> tuple:
     """Tracking model using Genetic Algorithm and Quadratic Optimization as shown in Amorim et al. (2020).
@@ -44,32 +44,33 @@ def track_index(
     pop = list(gen_initial_pop(N, P, K))
     stop = False
     flag_mse_limit = False
-    obj_fun_pop = None
+    results_df = None
     while not stop:
         children = None
         if uniform(0, 1) <= cross:
             parents = choices(pop, k=2)
             children = crossover(parents, cut, K)
+            print('crossover', children)
+            
             if uniform(0, 1) <= mut:
                 children = mutate(children)
-        if children:
+
             pop.extend(children)
-            print(pop)
-            obj_fun_pop, flag_mse_limit = select_top(pop, data,
-                                                     mse_limit, index_name)
-            pop = obj_fun_pop[0]
+            results_df, flag_mse_limit = select_top(pop, data,
+                                                    mse_limit, index_name)
+            pop = results_df['pop'].to_numpy().tolist()
+            #print(results_df.head(1)['obj_values'][0]['cost value'])
+            print(results_df.head(1)['obj_values'][0]['names'])
 
         if((time() - t0) >= max_time) or (flag_mse_limit == True):
             stop = True
-    
-    names, weights = select_best(obj_fun_pop)
         
-    return names, weights, (time() - t0)
+    return results_df.head(1)['obj_values'][0], (time() - t0)
 
 
 def gen_initial_pop(N:int, P:int, K:int):
     for i in range(P):  
-        initial_population = np.zeros((N,))
+        initial_population = np.zeros((N,), dtype=int)
         sample_values = sample(list(range(N)), k=K)
         for activated_index in sample_values:
             initial_population[activated_index] = 1
@@ -128,17 +129,24 @@ def select_top(
     mse_limit:float,
     index_name:str
 ) -> tuple:
-    obj_values = [objective_fun(i, data, index_name) for i in pop]
-    obj_values.sort(key=lambda x: x['cost value'])
+    data = data.copy()
     
-    print('hey oh', obj_values)
+    select_data = pd.DataFrame({
+        'pop':pop,
+        'obj_values':[objective_fun(i, data, index_name) for i in pop]
+    }).sort_values(
+        by='obj_values', key = lambda col: col.apply(lambda elem: elem['cost value'])).\
+    reset_index()
+
+    select_data['cost'] = select_data['obj_values'].apply(lambda x: x['cost value'])
+    select_data['check_mse_list'] = select_data['cost'] <= mse_limit
+    check_mse = any(select_data['check_mse_list'][:-2].to_numpy())
     
-    check_mse_limit = any(list(map(lambda x: x['cost value'] <= mse_limit,
-                                   obj_values)))
+    n = select_data.shape[0]
+    select_data = select_data.loc[:, ['pop', 'obj_values']].head(n - 2)
     
-    print(check_mse_limit)
-    
-    return obj_values[:-2], check_mse_limit
+    return select_data, check_mse
+
 
 
 def objective_fun(
@@ -166,7 +174,7 @@ if __name__ == '__main__':
     s3=np.random.normal(size=T)
     s4=np.random.normal(size=T)
     s5=np.random.normal(size=T) 
-    index = s1*0.1 + s2*0.2 + s3*0.3 + s4*0.2 + s5*0.2
+    index = s1*0.5 + s2*0.05 + s3*0.05 + s4*0.2 + s5*0.2
 
     df = pd.DataFrame({
         's1': s1,
@@ -177,10 +185,11 @@ if __name__ == '__main__':
         'index': index
     })
     
-    df = df.apply(lambda x: (np.diff(x) / x[1:] ))
-    print(df.isna().mean())
+    qp = qp_solver(df)
+    sol = qp.solve()
+    # Solution with all indexes.
+    print('All Indexes Solutions')
+    print(sol)
+    print(qp.weights)
     
-    track_index(df, K=3, index_name='index')
-    
-    
-    
+    print(track_index(df, K=3, index_name='index', P=5, cut = 2))

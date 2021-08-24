@@ -3,6 +3,8 @@ import pandas as pd
 from cvxopt import matrix
 from cvxopt import solvers
 
+# Non verbose
+solvers.options['show_progress'] = False
 
 class qp_solver:
     def __init__(self, df:pd.DataFrame, limits:np.ndarray=None, col_index:str='index'):
