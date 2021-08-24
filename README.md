@@ -4,7 +4,7 @@ _tracking_model_ is a Python Package that implements Genetic Algorithm as shown 
 
 Say that we have an index formed of 500 economical series, such as the S&P500. We wish to try to imitate the behavior of the S&P500 time-series of returns with only 10 time-series. The reason for that could be because of investment restrictions in general, or because it is harder to track 500 series rathen than just 10, etc.
 
-This problem could be solve using quadratic or linear programming, etc, however, to find the best weighted linear combination of the original time-series could prove to take a while. This is where the Genetic Metaheuristic comes into play. We can dramatically speed-up this process.
+This problem could be solved using quadratic or linear programming, however to find the best weighted linear combination of the original time-series could prove to take a while. This is where the Genetic Metaheuristic comes into play. We can dramatically speed-up this process.
 
 ## Installing
 
