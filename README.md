@@ -6,6 +6,20 @@ Say that we have an index formed of 500 economical series, such as the S&P500. W
 
 This problem could be solve using quadratic or linear programming, etc, however, to find the best weighted linear combination of the original time-series could prove to take a while. This is where the Genetic Metaheuristic comes into play. We can dramatically speed-up this process.
 
+## Installing
+
+You can install it via [pip](https://pip.pypa.io/en/stable/getting-started/) or [poetry](https://python-poetry.org/).
+
+```python
+pip install tracking-model
+```
+
+or 
+
+```python
+poetry add tracking-model
+```
+
 ## References 
 
 The references for the quadratic programming and the paper that inspired this package is given at the _references/_ folder. 
