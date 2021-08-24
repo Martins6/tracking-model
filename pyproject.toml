@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tracking_model"
-version = "0.1.2"
+version = "0.2.0"
 description = "Genetic Algorithm Optimization for the Index-Tracking problem."
 authors = ["Adriel Martins <adrielfalcao@gmail.com>"]
 
