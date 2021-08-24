@@ -50,7 +50,6 @@ def track_index(
         if uniform(0, 1) <= cross:
             parents = choices(pop, k=2)
             children = crossover(parents, cut, K)
-            print('crossover', children)
             
             if uniform(0, 1) <= mut:
                 children = mutate(children)
@@ -59,8 +58,6 @@ def track_index(
             results_df, flag_mse_limit = select_top(pop, data,
                                                     mse_limit, index_name)
             pop = results_df['pop'].to_numpy().tolist()
-            #print(results_df.head(1)['obj_values'][0]['cost value'])
-            print(results_df.head(1)['obj_values'][0]['names'])
 
         if((time() - t0) >= max_time) or (flag_mse_limit == True):
             stop = True
@@ -166,30 +163,3 @@ def objective_fun(
             'names': qp.weights,
             'cost value': sol['cost value']}
 
-
-if __name__ == '__main__':
-    T = 1000
-    s1=np.random.normal(size=T)
-    s2=np.random.normal(size=T)
-    s3=np.random.normal(size=T)
-    s4=np.random.normal(size=T)
-    s5=np.random.normal(size=T) 
-    index = s1*0.5 + s2*0.05 + s3*0.05 + s4*0.2 + s5*0.2
-
-    df = pd.DataFrame({
-        's1': s1,
-        's2': s3,
-        's3': s2,
-        's4': s4,
-        's5': s5,
-        'index': index
-    })
-    
-    qp = qp_solver(df)
-    sol = qp.solve()
-    # Solution with all indexes.
-    print('All Indexes Solutions')
-    print(sol)
-    print(qp.weights)
-    
-    print(track_index(df, K=3, index_name='index', P=5, cut = 2))

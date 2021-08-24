@@ -91,32 +91,3 @@ class qp_solver:
         sol['cost value'] = cost_value
         
         return sol
-        
-
-if __name__ == '__main__':
-    T = 1000
-    s1=np.random.normal(size=T)
-    s2=np.random.normal(size=T)
-    s3=np.random.normal(size=T)
-    index = s1*0.6 + s2*0.1 + s3*0.3
-    print(type(s1))
-
-    df = pd.DataFrame({
-        's1': s1,
-        's3': s3,
-        's2': s2,
-        'index': index
-    })
-       
-    qp = qp_solver(df)
-    sol = qp.solve()
-    print(sol)
-    print(sol['x'])
-    print(qp.weights)
-    print(sol['cost value'])
-    # Checking solution
-    stock_data = df.loc[:, ~df.columns.str.match('index')].to_numpy()
-    weights = sol['x']
-    model_results = np.matmul(stock_data, weights).flatten()
-    
-    print(np.mean((df['index'].to_numpy() - model_results)**2))
