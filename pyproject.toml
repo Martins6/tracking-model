@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tracking_model"
-version = "0.1.0"
+version = "0.1.1"
 description = "Genetic Algorithm Optimization for the Index-Tracking problem."
 authors = ["Adriel Martins <adrielfalcao@gmail.com>"]
 
@@ -8,9 +8,6 @@ authors = ["Adriel Martins <adrielfalcao@gmail.com>"]
 python = ">=3.8,<3.11"
 pandas = "^1.3.2"
 numpy = "^1.21.2"
-scikit-learn = "^0.24.2"
-matplotlib = "^3.4.3"
-seaborn = "^0.11.2"
 cvxopt = "^1.2.6"
 
 [tool.poetry.dev-dependencies]
