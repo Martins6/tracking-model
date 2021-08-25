@@ -54,13 +54,13 @@ df = pd.DataFrame({
 # Solution with all time-series
 qp = qp_solver(df)
 sol = qp.solve()
-print('All Indexes Solutions')
+print('Exact solution with all time-series')
 print(sol['x'])
 print(qp.weights)
 print(sol['cost value'])
 print('\n')
 
 # Metaheuristic solution with fewer time-series (K=3)
-print('Genetic Algorithm Solution')
+print('Genetic Algorithm Solution with fewer time-series')
 print(track_index(df, K=3, index_name='index', P=5, cut = 2, max_time=3))
 ```
