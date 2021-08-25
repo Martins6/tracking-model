@@ -61,6 +61,6 @@ print(sol['cost value'])
 print('\n')
 
 # Metaheuristic solution with fewer time-series (K=3)
-print('Genetic Algorith Solution')
+print('Genetic Algorithm Solution')
 print(track_index(df, K=3, index_name='index', P=5, cut = 2, max_time=3))
 ```
